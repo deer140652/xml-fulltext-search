@@ -34,22 +34,24 @@
 
 ## 專案結構
 
-```text
-web/                      網頁前端
-  index.html
-  assets/js/              搜尋與文字處理相關程式
-  assets/css/
-  data/                   語料庫索引 JSON
+```
+xml-fulltext-search/
+├── web/                      網頁前端
+  ├── index.html
+  ├── assets/js/              搜尋與文字處理相關程式
+  ├── assets/css/
+  └── data/                   語料庫索引 JSON
 
-scripts/                  Python 批次處理工具
-  ir_core.py              與瀏覽器端邏輯對應的 Python 版本
-  build_index.py          建立 XML 語料庫索引
-  fetch_by_pmid_list.py   本機端抓取 PMID 對應摘要 （瀏覽器抓取失敗時的備援）
+├── scripts/                  Python 批次處理工具
+  ├── ir_core.py              與瀏覽器端邏輯對應的 Python 版本
+  ├── build_index.py          建立 XML 語料庫索引
+  └── fetch_by_pmid_list.py   本機端抓取 PMID 對應摘要 （瀏覽器抓取失敗時的備援）
 
-backend/
-  ncbi-proxy-worker.js    NCBI API 代理
+├── backend/
+  └── ncbi-proxy-worker.js    NCBI API 代理
 
-data/raw_pmc/             放置要批次處理的 XML 文件
+├── data/raw_pmc/             放置要批次處理的 XML 文件
+└── README.md
 ```
 
 ## 主要技術
