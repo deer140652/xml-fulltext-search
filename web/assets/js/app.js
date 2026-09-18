@@ -313,12 +313,18 @@
       const titleHtml = INCLUDE_TITLE ? highlightFullText(doc.title, matchedTerms) : escapeHtml(doc.title);
       const hitText = INCLUDE_TITLE ? `${doc.title} ${doc.abstract || ""}` : (doc.abstract || "");
       const hitCount = countMatches(hitText, matchedTerms);
+      const authors = doc.authors || [];
+      const authorDisplay = authors.length > 3
+        ? `${authors.slice(0, 3).join(", ")} et al.`
+        : (authors.join(", ") || "—");
+        
       return `
         <article class="result-card" style="--rank-delay:${i * 40}ms">
           <div class="result-rank">#${i + 1}</div>
           <div class="result-body">
             <h3>${titleHtml}${/* doc.uploaded ? ' <span class="uploaded-tag">已上傳</span>' : "" */ ""}${doc.is_generic_xml ? ' <span class="generic-tag">一般 XML（非期刊格式）</span>' : ""}</h3>
-            <p class="result-meta">${escapeHtml(doc.journal || "—")} · ${escapeHtml(doc.year || "—")} · ${escapeHtml((doc.authors || []).join(", ") || "—")} · <span class="pmid">PMID ${escapeHtml(doc.pmid || "—")}</span></p>
+            <p class="result-meta">${escapeHtml(doc.journal || "—")} · ${escapeHtml(doc.year || "—")} · ${escapeHtml(authorDisplay)}</p>
+            <p class="result-ids"><span class="pmid">PMID: ${escapeHtml(doc.pmid || "—")}</span>${doc.pmcid ? `<span class="pmid">PMCID: ${escapeHtml(doc.pmcid)}</span>` : ""}</p>
             <p class="result-snippet">${snippet}</p>
             <div class="result-footer">
               <span class="score-bar" aria-hidden="true"><span style="width:${pct}%"></span></span>
@@ -350,11 +356,14 @@
 
     const max = Math.max(1, ...ALL_DOCS.map((d) => abstractStats(d).num_words));
     $("#doc-bars").innerHTML = ALL_DOCS.length === 0
-      ? `<p class="empty-state small">尚未有任何文獻——請上傳 .xml 檔案。</p>`
+      ? `<p class="empty-state small">尚未有任何文獻，請上傳 .xml 檔案。</p>`
       : ALL_DOCS.map((d) => {
       const ds = abstractStats(d);
       const w = Math.round((ds.num_words / max) * 100);
-      const label = d.id.replace("PMC_sample_", "PMC-");
+      const idParts = [];
+      if (d.pmid) idParts.push(d.pmid);
+      if (d.pmcid) idParts.push(d.pmcid);
+      const label = idParts.length ? idParts.join(" · ") : d.id.replace("PMC_sample_", "PMC-");
       return `
         <div class="bar-row" data-doc="${d.id}" title="點擊查看：${escapeHtml(d.title)}">
           <span class="bar-label-row">
@@ -390,14 +399,14 @@
     const s = IRCore.computeStats(statsSourceText);
 
     $("#doc-modal-title").innerHTML = INCLUDE_TITLE ? highlightFullText(doc.title, terms) : escapeHtml(doc.title);
-    $("#doc-modal-meta").textContent = `${doc.journal || "—"} · ${doc.year || "—"} · ${(doc.authors || []).join(", ") || "—"} · PMID ${doc.pmid || "—"}`;
+    $("#doc-modal-meta").innerHTML = `${escapeHtml(doc.journal || "—")} · ${escapeHtml(doc.year || "—")} · ${escapeHtml((doc.authors || []).join(", ") || "—")}<br><span class="pmid">PMID: ${escapeHtml(doc.pmid || "—")}</span>${doc.pmcid ? `<span class="pmid">PMCID: ${escapeHtml(doc.pmcid)}</span>` : ""}`;
     $("#doc-modal-stats").innerHTML = [
       ["字元數", s.num_characters.toLocaleString()],
       ["字元數（不含空白）", s.num_characters_no_spaces.toLocaleString()],
       ["字數", s.num_words.toLocaleString()],
-      ["句數（規則式偵測）", s.num_sentences.toLocaleString()],
-      ["平均每句字數", s.avg_words_per_sentence],
-      ["索引詞數（移除停用詞後）", s.num_index_terms.toLocaleString()],
+      ["句數", s.num_sentences.toLocaleString()],
+      //["平均每句字數", s.avg_words_per_sentence],
+      ["索引詞數（過濾停用詞後）", s.num_index_terms.toLocaleString()],
       ["唯一詞幹數", s.num_unique_stems.toLocaleString()],
     ].map(([label, val]) => `<div class="stat-chip"><span>${label}</span><strong>${val}</strong></div>`).join("");
 
@@ -582,7 +591,7 @@
     const preview = $("#pmid-preview");
     const previewCount = $("#pmid-preview-count");
     const startBtn = $("#pmid-fetch-start");
-    let pendingPmids = [];
+    let pendingIds = { pmids: [], pmcIds: [] };
 
     function loadTxt(file) {
       if (!/\.txt$/i.test(file.name)) {
@@ -608,21 +617,26 @@
             renderCorpusOverview();
             rerenderCurrent();
             preview.hidden = true;
-            pendingPmids = [];
+            pendingIds = { pmids: [], pmcIds: [] };
             setPmidStatus(`偵測到 PubMed 摘要匯出格式，已直接解析並新增 ${added} 篇文獻。`, false);
             return;
           }
         }
 
-        // Format 2: a bare PMID list -> this DOES need a live fetch to
-        // NCBI, so show a preview + explicit confirm step first.
-        pendingPmids = PmidFetcher.extractPmids(text);
-        if (!pendingPmids.length) {
+        // Format 2/3: a list of bare PMIDs and/or "PMC..." accession
+        // numbers (freely mixed) -> this DOES need a live fetch to NCBI,
+        // so show a preview + explicit confirm step first.
+        pendingIds = PmidFetcher.extractIds(text);
+        const total = pendingIds.pmids.length + pendingIds.pmcIds.length;
+        if (!total) {
           preview.hidden = true;
-          setPmidStatus("這個檔案看起來不是 PubMed 摘要匯出格式，也沒有找到看起來像 PMID 的數字。", true);
+          setPmidStatus("這個檔案看起來不是 PubMed 摘要匯出格式，也沒有找到看起來像 PMID 或 PMC 編號的內容。", true);
           return;
         }
-        previewCount.textContent = `找到 ${pendingPmids.length} 個 PMID，準備好就按下方按鈕開始。`;
+        const parts = [];
+        if (pendingIds.pmids.length) parts.push(`${pendingIds.pmids.length} 個 PMID`);
+        if (pendingIds.pmcIds.length) parts.push(`${pendingIds.pmcIds.length} 個 PMC 編號`);
+        previewCount.textContent = `找到 ${parts.join("、")}，準備好就按下方按鈕開始。`;
         preview.hidden = false;
         setPmidStatus("", false);
       }).catch((e) => setPmidStatus("無法讀取檔案：" + e.message, true));
@@ -651,11 +665,11 @@
     dropzone.addEventListener("click", () => input.click());
 
     startBtn.addEventListener("click", async () => {
-      if (!pendingPmids.length) return;
+      if (!pendingIds.pmids.length && !pendingIds.pmcIds.length) return;
       startBtn.disabled = true;
       try {
-        const { docs, errors } = await PmidFetcher.fetchArticlesForPmids(
-          pendingPmids,
+        const { docs, errors } = await PmidFetcher.fetchArticlesForIds(
+          pendingIds,
           (msg) => setPmidStatus(msg, false)
         );
 
@@ -682,7 +696,7 @@
 
         if (added > 0) {
           preview.hidden = true;
-          pendingPmids = [];
+          pendingIds = { pmids: [], pmcIds: [] };
         }
       } catch (e) {
         setPmidStatus(e.message, true);

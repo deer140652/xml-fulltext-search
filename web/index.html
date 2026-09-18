@@ -13,7 +13,6 @@
   <div class="masthead-inner">
     <div class="masthead-top">
       <span class="masthead-kicker">人工智慧資訊擷取技術</span>
-      <!-- 提示：推送到 GitHub 後，把下面 href="#" 換成你自己的 repo 網址 -->
       <a class="masthead-repo" href="https://github.com/deer140652/xml-fulltext-search" id="repo-link" target="_blank" rel="noopener">原始碼（GitHub）↗</a>
     </div>
     <h1>XML 文件檢索系統</h1>
@@ -29,7 +28,7 @@
         <div class="stat-block"><strong id="stat-docs">–</strong><span>文獻數</span></div>
         <div class="stat-block"><strong id="stat-words">–</strong><span>總字數</span></div>
         <div class="stat-block"><strong id="stat-sentences">–</strong><span>總句數</span></div>
-        <div class="stat-block"><strong id="stat-vocab">–</strong><span>詞彙量（字幹）</span></div>
+        <div class="stat-block"><strong id="stat-vocab">–</strong><span>詞彙量（詞幹）</span></div>
       </div>
       <h3 class="sub-heading">各文獻字數與句數</h3>
       <div id="doc-bars" class="doc-bars"></div>
@@ -38,7 +37,7 @@
     <section class="card">
       <h2>系統運作原理</h2>
       <ol class="how-list">
-        <li><strong>文件擷取：</strong>支援上傳 XML 或透過 PMID 取得文獻。自動辨識 PubMed / JATS 格式，擷取標題與摘要；其他 XML 則擷取全文文字。</li>
+        <li><strong>文件擷取：</strong>支援上傳 XML 或透過 PMID / PMCID 取得文獻。自動辨識 PubMed / JATS 格式，擷取標題與摘要；其他 XML 則擷取全文文字。</li>
         <li><strong>句子分割：</strong>採規則式斷句切分文本，正確處理縮寫與小數點，避免誤判句尾。</li>
         <li><strong>文字正規化：</strong>統一大小寫、移除停用詞，並使用 Porter 詞幹還原。連字號複合詞同時保留完整詞形與拆分詞，提升搜尋涵蓋率。</li>
         <li><strong>索引建置：</strong>建立「摘要」與「標題＋摘要」兩套加權反向索引，依「包含標題」選項切換。文件新增後，瀏覽器即時重建索引。</li>
@@ -70,6 +69,21 @@
 
   <aside class="sidebar">
     <section class="card upload-card">
+      <h2>用 PMID / PMC 或 PubMed 摘要清單加入文獻</h2>
+      <!--p class="upload-note">支援三種 .txt 格式，系統會自動判斷：① PubMed 網站「Save → Format: Abstract」另存的摘要清單——標題、作者、摘要都已經在檔案裡，<strong>不需要網路連線</strong>，直接解析加入；② 純 PMID 數字清單、或 PMC 編號清單（例如 PMC11534501，可以混在同一份清單裡）——這種會自動連到 PubMed／PMC 抓取，若直接連線被擋，系統會自動改走備援轉發服務再試一次；如果還是失敗，可改用 <code>scripts/fetch_by_pmid_list.py</code> 在本機下載後，再用上面「上傳 XML 文件」加入。</p-->
+      <div id="pmid-dropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="選擇或拖曳 TXT 檔">
+        <span class="upload-dropzone-icon">⇪</span>
+        <span>拖曳 .txt 檔案到這裡，或點擊選擇檔案</span>
+      </div>
+      <input type="file" id="pmid-upload-input" accept=".txt" hidden>
+      <div id="pmid-preview" class="pmid-preview" hidden>
+        <p id="pmid-preview-count" class="upload-count"></p>
+        <button id="pmid-fetch-start" class="ghost-btn-light" type="button">開始抓取</button>
+      </div>
+      <p id="pmid-status" class="upload-status" aria-live="polite"></p>
+    </section>
+
+    <section class="card upload-card">
       <h2>上傳 XML 文件</h2>
       <!--p class="upload-note">支援任意 XML 檔案——偵測到期刊文章格式（title / abstract / body）會顯示完整結構，否則會直接索引整份文件的文字內容。檔案只會在你的瀏覽器裡被解析、建立索引——不會上傳到任何伺服器，也不需要資料庫。</p-->
       <div id="upload-dropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="選擇或拖曳 XML 檔案">
@@ -81,21 +95,6 @@
       <p id="upload-count" class="upload-count">尚未上傳任何文獻。</p>
       <ul id="upload-list" class="upload-list"></ul>
       <button id="upload-reset" class="ghost-btn-light" type="button" hidden>清除所有上傳</button>
-    </section>
-
-    <section class="card upload-card">
-      <h2>用 PMID 或 PubMed 摘要清單加入文獻</h2>
-      <!--p class="upload-note">支援兩種 .txt 格式，系統會自動判斷：① PubMed 網站「Save → Format: Abstract」另存的摘要清單——標題、作者、摘要都已經在檔案裡，<strong>不需要網路連線</strong>，直接解析加入；② 純 PMID 數字清單（每行一個）——這種會自動連到 PubMed／PMC 抓取，若直接連線被擋，系統會自動改走備援轉發服務再試一次；如果還是失敗，可改用 <code>scripts/fetch_by_pmid_list.py</code> 在本機下載後，再用上面「上傳 XML 文件」加入。</p-->
-      <div id="pmid-dropzone" class="upload-dropzone" tabindex="0" role="button" aria-label="選擇或拖曳 TXT 檔">
-        <span class="upload-dropzone-icon">⇪</span>
-        <span>拖曳 .txt 檔案到這裡，或點擊選擇檔案</span>
-      </div>
-      <input type="file" id="pmid-upload-input" accept=".txt" hidden>
-      <div id="pmid-preview" class="pmid-preview" hidden>
-        <p id="pmid-preview-count" class="upload-count"></p>
-        <button id="pmid-fetch-start" class="ghost-btn-light" type="button">開始抓取</button>
-      </div>
-      <p id="pmid-status" class="upload-status" aria-live="polite"></p>
     </section>
   </aside>
 

@@ -117,6 +117,7 @@
     const doc = {
       id: pmcid || (pmid ? "PMID" + pmid : fallbackId),
       pmid,
+      pmcid,
       title,
       journal: journalM ? journalM[1].trim() : "",
       year: yearM ? yearM[0] : "",

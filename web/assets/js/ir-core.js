@@ -278,7 +278,15 @@ wouldn't you you'd you'll you're you've your yours yourself yourselves
   }
 
   const stemmer = new PorterStemmer();
-  function stem(word) { return stemmer.stem(word); }
+  function stem(word) {
+    // Strip a trailing possessive apostrophe ("cancer's" -> "cancer",
+    // "cancers'" -> "cancers") BEFORE running Porter stemming. Without
+    // this, the algorithm's own "drop a trailing s" rule can leave the
+    // apostrophe dangling (e.g. "cancer's" -> "cancer'"), producing a
+    // stem that never matches the plain "cancer" a search would produce.
+    const cleaned = word.replace(/'s$|'$/i, "");
+    return stemmer.stem(cleaned || word);
+  }
   function stemAll(tokens) { return tokens.map(stem); }
 
   // -------------------------------------------------------------------

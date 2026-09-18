@@ -50,7 +50,9 @@ def parse_one_article(root, fallback_id):
     if title_el is None:
         title_el = root.find(".//title")
 
-    pmcid_el = root.find(".//article-id[@pub-id-type='pmc']")
+    pmcid_el = root.find(".//article-id[@pub-id-type='pmcid']")
+    if pmcid_el is None:
+        pmcid_el = root.find(".//article-id[@pub-id-type='pmc']")
     pmcid = text_of(pmcid_el).strip() if pmcid_el is not None else ""
 
     pmid_el = root.find(".//article-id[@pub-id-type='pmid']")
@@ -153,6 +155,7 @@ def parse_one_article(root, fallback_id):
     return {
         "id": pmcid or (("PMID" + pmid) if pmid else "") or fallback_id,
         "pmid": pmid,
+        "pmcid": pmcid,
         "title": title,
         "journal": journal,
         "year": year,
@@ -176,6 +179,10 @@ def parse_one_pubmed_article(root, fallback_id):
     the difference."""
     title_el = root.find(".//ArticleTitle")
     pmid_el = root.find(".//PMID")
+    # Even a plain PubMed/MEDLINE citation (db=pubmed) often carries a PMC
+    # cross-reference in <PubmedData><ArticleIdList><ArticleId IdType="pmc">
+    # -- worth surfacing even though we didn't fetch the full text.
+    pmcid_el = root.find(".//ArticleId[@IdType='pmc']")
     journal_el = root.find(".//Journal/Title")
     if journal_el is None:
         journal_el = root.find(".//Journal/ISOAbbreviation")
@@ -208,12 +215,14 @@ def parse_one_pubmed_article(root, fallback_id):
 
     title = text_of(title_el).strip() if title_el is not None else (fallback_id or "")
     pmid = text_of(pmid_el).strip() if pmid_el is not None else fallback_id
+    pmcid = text_of(pmcid_el).strip() if pmcid_el is not None else ""
 
     full_text = ir_core.join_with_period(title, abstract)
 
     return {
         "id": "PMID" + (pmid or fallback_id or ""),
         "pmid": pmid,
+        "pmcid": pmcid,
         "title": title,
         "journal": text_of(journal_el).strip() if journal_el is not None else "",
         "year": text_of(year_el).strip() if year_el is not None else "",
@@ -322,6 +331,7 @@ def build():
             docs.append({
                 "id": art["id"],
                 "pmid": art["pmid"],
+                "pmcid": art["pmcid"],
                 "title": art["title"],
                 "journal": art["journal"],
                 "year": art["year"],

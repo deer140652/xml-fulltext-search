@@ -123,7 +123,7 @@
    */
   function extractOneArticle(scopeEl, fallbackId) {
     const titleEl = scopeEl.querySelector("article-title") || scopeEl.querySelector("title");
-    const pmcEl = scopeEl.querySelector('article-id[pub-id-type="pmc"]');
+    const pmcEl = scopeEl.querySelector('article-id[pub-id-type="pmcid"]') || scopeEl.querySelector('article-id[pub-id-type="pmc"]');
     const pmidEl = scopeEl.querySelector('article-id[pub-id-type="pmid"]');
     const journalEl = scopeEl.querySelector("journal-title");
     const yearEl = scopeEl.querySelector("pub-date year") || scopeEl.querySelector("year");
@@ -161,13 +161,15 @@
 
     const title = collapseWs(textOf(titleEl)) || fallbackId || ("文件_" + Date.now());
     const pmid = collapseWs(textOf(pmidEl));
-    const id = collapseWs(textOf(pmcEl)) || (pmid ? "PMID" + pmid : "") || fallbackId || ("UPLOAD_" + Date.now());
+    const pmcid = collapseWs(textOf(pmcEl));
+    const id = pmcid || (pmid ? "PMID" + pmid : "") || fallbackId || ("UPLOAD_" + Date.now());
     const fullText = IRCore.joinWithPeriod(title, `${abstractText} ${bodyParas.join(" ")}`.trim());
     const stats = IRCore.computeStats(fullText);
 
     const doc = {
       id,
       pmid,
+      pmcid,
       title,
       journal: collapseWs(textOf(journalEl)),
       year: collapseWs(textOf(yearEl)),
@@ -221,6 +223,11 @@
     const pmidEl = articleEl.querySelector("PMID");
     const journalEl = articleEl.querySelector("Journal Title") || articleEl.querySelector("Journal ISOAbbreviation");
     const yearEl = articleEl.querySelector("JournalIssue PubDate Year") || articleEl.querySelector("PubDate Year");
+    // Even a plain PubMed/MEDLINE citation (db=pubmed) often carries a PMC
+    // cross-reference in <PubmedData><ArticleIdList><ArticleId IdType="pmc">
+    // -- worth surfacing even though we didn't fetch the full text.
+    const pmcidEl = articleEl.querySelector('PubmedData > ArticleIdList > ArticleId[IdType="pmc"]');
+    //const pmcidEl = articleEl.querySelector('ArticleId[IdType="pmc"]');
 
     const authors = Array.from(articleEl.querySelectorAll("AuthorList > Author")).map((a) => {
       const given = textOf(a.querySelector("ForeName"));
@@ -248,6 +255,7 @@
       return { ok: false, error: "這篇 PubMed 記錄沒有標題也沒有摘要，無法建立文件。" };
     }
     const pmid = collapseWs(textOf(pmidEl)) || fallbackId;
+    const pmcid = collapseWs(textOf(pmcidEl));
     // Per the assignment's abstract-only matching scope, a record with NO
     // abstract (common for short editorials/correspondence) is still kept
     // -- just with an empty abstract, so it's visible by title and doesn't
@@ -259,6 +267,7 @@
     const doc = {
       id: "PMID" + (pmid || fallbackId || Date.now()),
       pmid,
+      pmcid,
       title,
       journal: collapseWs(textOf(journalEl)),
       year: collapseWs(textOf(yearEl)),

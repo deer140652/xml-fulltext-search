@@ -54,7 +54,7 @@ body {
 .masthead-inner {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 28px 24px 26px;
+  padding: 24px 24px 16px;
 }
 .masthead-top {
   display: flex;
@@ -63,7 +63,7 @@ body {
   font-family: var(--mono);
   font-size: 0.78rem;
   color: var(--ink-soft);
-  margin-bottom: 14px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -79,7 +79,8 @@ body {
   font-family: var(--serif);
   font-size: clamp(2.1rem, 4vw, 2.9rem);
   font-weight: 700;
-  margin: 0 0 10px;
+  margin: 0;
+  line-height: 1.1;
   letter-spacing: -0.01em;
 }
 .masthead-sub {
@@ -283,9 +284,14 @@ body {
   font-family: var(--mono);
   font-size: 0.76rem;
   color: var(--ink-soft);
+  margin: 0 0 4px;
+}
+.result-ids {
+  font-family: var(--mono);
+  font-size: 0.76rem;
   margin: 0 0 10px;
 }
-.pmid { color: var(--teal-deep); }
+.pmid { color: var(--teal-deep); display: block; }
 .result-snippet {
   font-family: var(--serif);
   font-size: 0.98rem;
@@ -401,7 +407,7 @@ body {
 }
 .bar-label {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--ink-soft);
   white-space: nowrap;
 }
@@ -672,7 +678,7 @@ body {
   border: none;
   border-radius: 6px;
   padding: 0;
-  max-width: 680px;
+  max-width: 800px;
   width: 92vw;
   max-height: 85vh;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);

@@ -317,7 +317,13 @@ _stemmer = PorterStemmer()
 
 
 def stem(word: str) -> str:
-    return _stemmer.stem(word)
+    # Strip a trailing possessive apostrophe ("cancer's" -> "cancer",
+    # "cancers'" -> "cancers") BEFORE running Porter stemming. Without
+    # this, the algorithm's own "drop a trailing s" rule can leave the
+    # apostrophe dangling (e.g. "cancer's" -> "cancer'"), producing a
+    # stem that never matches the plain "cancer" a search would produce.
+    cleaned = re.sub(r"'s$|'$", "", word, flags=re.IGNORECASE)
+    return _stemmer.stem(cleaned or word)
 
 
 def stem_all(tokens):
