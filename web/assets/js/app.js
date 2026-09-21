@@ -300,7 +300,7 @@
       } else if (rawTokenCount === 0) {
         resultsEl.innerHTML = `<p class="empty-state">請輸入至少一個英文字母組成的關鍵字。</p>`;
       } else {
-        resultsEl.innerHTML = `<p class="empty-state">沒有符合的文獻。請嘗試更廣泛的關鍵字；系統支援詞幹比對，也可在字尾加 <code>*</code> 進行前綴搜尋，例如 <code>confirm*</code>。</p>`;
+        resultsEl.innerHTML = `<p class="empty-state">沒有符合的文獻。請嘗試更廣泛的關鍵字；系統支援詞幹比對，也可在字尾加 <code>*</code> 進行前綴搜尋，例如 <code>con*</code>。</p>`;
       }
       LAST_MATCHED_TERMS = matchedTerms;
       return;
