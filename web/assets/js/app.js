@@ -296,11 +296,11 @@
       if (allStopwords) {
         resultsEl.innerHTML = `<p class="empty-state">「${stopwordsFound.map((w) => `<code>${escapeHtml(w)}</code>`).join("、")}」是<strong>停用詞（stopword）</strong>——像 and、is、the、of 這類字幾乎每篇文獻都會出現，對檢索沒有鑑別度，系統會依照標準 IR 前處理流程自動忽略，不納入比對。請改搜尋有實際意義的關鍵字，例如疾病、藥物、症狀、方法等名詞。</p>`;
       } else if (hadWildcard) {
-        resultsEl.innerHTML = `<p class="empty-state">沒有任何索引詞是以這個字首開頭的。萬用字元 <code>*</code> 是比對「已建索引的字幹」，試試更短的字首，或先確認語料庫裡有沒有相關字詞。</p>`;
+        resultsEl.innerHTML = `<p class="empty-state">沒有任何索引詞是以這個字首開頭的。萬用字元 <code>*</code> 是比對「已建索引的詞幹」，試試更短的字首，或先確認語料庫裡有沒有相關字詞。</p>`;
       } else if (rawTokenCount === 0) {
         resultsEl.innerHTML = `<p class="empty-state">請輸入至少一個英文字母組成的關鍵字。</p>`;
       } else {
-        resultsEl.innerHTML = `<p class="empty-state">沒有符合的文獻。試試更廣泛的關鍵字——系統以「字幹」（stem）比對，所以 "vaccinated" 也會比對到 "vaccine"；或在字尾加 <code>*</code> 做前綴搜尋，例如 <code>confirm*</code>。</p>`;
+        resultsEl.innerHTML = `<p class="empty-state">沒有符合的文獻。請嘗試更廣泛的關鍵字；系統支援詞幹比對，也可在字尾加 <code>*</code> 進行前綴搜尋，例如 <code>confirm*</code>。</p>`;
       }
       LAST_MATCHED_TERMS = matchedTerms;
       return;
